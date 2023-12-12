@@ -11,7 +11,29 @@ import (
 	"lab2/src/gateway-service/models"
 )
 
+func CheckBonusHealth() (interface{}, error) {
+	requestURL := "http://bonus-service:8050/manage/health"
+	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{
+		Timeout: 10 * time.Minute,
+	}
+
+	resp, err := client.Do(req)
+	return resp, err
+}
+
 func GetPrivilegeShortInfo(bonusServiceAddress, username string) (*models.Privilege, error) {
+
+	_, herr := bonuscb.Execute(CheckBonusHealth)
+	if herr != nil {
+		return &models.Privilege{}, herr
+	}
+
 	requestURL := fmt.Sprintf("%s/api/v1/bonus/%s", bonusServiceAddress, username)
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
@@ -45,6 +67,12 @@ func GetPrivilegeShortInfo(bonusServiceAddress, username string) (*models.Privil
 }
 
 func GetPrivilegeHistory(bonusServiceAddress string, privilegeID int) (*[]models.PrivilegeHistory, error) {
+
+	_, herr := bonuscb.Execute(CheckBonusHealth)
+	if herr != nil {
+		return &[]models.PrivilegeHistory{}, herr
+	}
+
 	requestURL := fmt.Sprintf("%s/api/v1/bonus/history/%d", bonusServiceAddress, privilegeID)
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
@@ -78,6 +106,12 @@ func GetPrivilegeHistory(bonusServiceAddress string, privilegeID int) (*[]models
 }
 
 func CreatePrivilegeHistoryRecord(bonusServiceAddress, uid, date, optype string, ID, diff int) error {
+
+	_, herr := bonuscb.Execute(CheckBonusHealth)
+	if herr != nil {
+		return herr
+	}
+
 	requestURL := fmt.Sprintf("%s/api/v1/bonus", bonusServiceAddress)
 
 	record := &models.PrivilegeHistory{
@@ -117,6 +151,12 @@ func CreatePrivilegeHistoryRecord(bonusServiceAddress, uid, date, optype string,
 	return nil
 }
 func UpdatePrivilege(bonusServiceAddress, username string, balance int) error {
+
+	_, herr := bonuscb.Execute(CheckBonusHealth)
+	if herr != nil {
+		return herr
+	}
+
 	requestURL := fmt.Sprintf("%s/api/v1/bonus/%s", bonusServiceAddress, username)
 	record := &models.Privilege{
 		Username: username,
@@ -153,6 +193,12 @@ func UpdatePrivilege(bonusServiceAddress, username string, balance int) error {
 }
 
 func CreatePrivilege(bonusServiceAddress, username string, balance int) error {
+
+	_, herr := bonuscb.Execute(CheckBonusHealth)
+	if herr != nil {
+		return herr
+	}
+
 	requestURL := fmt.Sprintf("%s/api/v1/bonus/privilege", bonusServiceAddress)
 
 	record := &models.Privilege{

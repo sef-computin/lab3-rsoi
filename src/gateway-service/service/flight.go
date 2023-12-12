@@ -10,7 +10,29 @@ import (
 	"lab2/src/gateway-service/models"
 )
 
+func CheckFlightHealth() (interface{}, error) {
+	requestURL := "http://flight-service:8060/manage/health"
+	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{
+		Timeout: 10 * time.Minute,
+	}
+
+	resp, err := client.Do(req)
+	return resp, err
+}
+
 func GetFlight(flightServiceAddress, flightNumber string) (*models.Flight, error) {
+
+	_, herr := flightcb.Execute(CheckFlightHealth)
+	if herr != nil {
+		return &models.Flight{}, herr
+	}
+
 	requestURL := fmt.Sprintf("%s/api/v1/flight/%s", flightServiceAddress, flightNumber)
 
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
@@ -43,6 +65,12 @@ func GetFlight(flightServiceAddress, flightNumber string) (*models.Flight, error
 }
 
 func GetAllFlightsInfo(flightServiceAddress string) (*[]models.FlightInfo, error) {
+
+	_, herr := flightcb.Execute(CheckFlightHealth)
+	if herr != nil {
+		return &[]models.FlightInfo{}, herr
+	}
+
 	requestURL := fmt.Sprintf("%s/api/v1/flights", flightServiceAddress)
 
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
@@ -98,6 +126,12 @@ func GetAllFlightsInfo(flightServiceAddress string) (*[]models.FlightInfo, error
 }
 
 func GetAirport(flightServiceAddress string, airportID int) (*models.Airport, error) {
+
+	_, herr := flightcb.Execute(CheckFlightHealth)
+	if herr != nil {
+		return &models.Airport{}, herr
+	}
+
 	requestURL := fmt.Sprintf("%s/api/v1/flight/airport/%d", flightServiceAddress, airportID)
 
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
