@@ -112,3 +112,31 @@ func CreateTicket(ticketsServiceAddress, username, flightNumber string, price in
 
 	return uid, nil
 }
+
+func deleteTicket(ticketServiceAddress, username, uid string) error {
+
+	requestURL := fmt.Sprintf("%s/api/v1/tickets/%s", ticketServiceAddress, uid)
+
+	req, err := http.NewRequest(http.MethodDelete, requestURL, nil)
+	if err != nil {
+		fmt.Println("Failed to create an http request")
+		return err
+	}
+
+	client := &http.Client{
+		Timeout: 10 * time.Minute,
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed request to flight service: %w", err)
+	}
+
+	defer func(Body io.ReadCloser) {
+		if err := Body.Close(); err != nil {
+			fmt.Println("Failed to close response body")
+		}
+	}(res.Body)
+
+	return nil
+}

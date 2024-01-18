@@ -4,63 +4,32 @@ import (
 	"fmt"
 
 	"lab2/src/gateway-service/models"
+	job_scheduler "lab2/src/job-scheduler"
 )
-
-func CancelTicketController(ticketServiceAddress, bonusServiceAddress, username string, ticketUID string) error {
-	privilegeShortInfo, err := GetPrivilegeShortInfo(bonusServiceAddress, username)
-	if err != nil {
-		return nil
-	}
-
-	privilegeHistory, err := GetPrivilegeHistory(bonusServiceAddress, privilegeShortInfo.ID)
-	if err != nil {
-		return nil
-	}
-
-	privilegeInfo := &models.PrivilegeInfo{
-		Status:  privilegeShortInfo.Status,
-		Balance: privilegeShortInfo.Balance,
-		History: privilegeHistory,
-	}
-
-	for _, privilege := range *privilegeInfo.History {
-		fmt.Println(privilege.TicketUID, ticketUID)
-		if privilege.TicketUID == ticketUID {
-			newBalance := privilegeInfo.Balance - privilege.BalanceDiff
-			if newBalance < 0 {
-				newBalance = 0
-			}
-			if err := UpdatePrivilege(bonusServiceAddress, username, newBalance); err != nil {
-				return nil
-			}
-
-		}
-	}
-	return nil
-}
 
 func UserTicketsController(ticketServiceAddress, flightServiceAddress, username string) (*[]models.TicketInfo, error) {
 	tickets, err := GetUserTickets(ticketServiceAddress, username)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user tickets: %s", err)
+		return &[]models.TicketInfo{}, fmt.Errorf("failed to get user tickets: %s", err)
 	}
 
 	ticketsInfo := make([]models.TicketInfo, 0)
 	for _, ticket := range *tickets {
 		flight, err := GetFlight(flightServiceAddress, ticket.FlightNumber)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get flights: %s", err)
+			continue
+			// return nil, fmt.Errorf("failed to get flights: %s", err)
 		}
 
-		airportFrom, err := GetAirport(flightServiceAddress, flight.FromAirportId)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get airport: %s", err)
-		}
+		airportFrom, _ := GetAirport(flightServiceAddress, flight.FromAirportId)
+		// if err != nil {
+		// 	return nil, fmt.Errorf("failed to get airport: %s", err)
+		// }
 
-		airportTo, err := GetAirport(flightServiceAddress, flight.ToAirportId)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get airport: %s", err)
-		}
+		airportTo, _ := GetAirport(flightServiceAddress, flight.ToAirportId)
+		// if err != nil {
+		// 	return nil, fmt.Errorf("failed to get airport: %s", err)
+		// }
 
 		ticketInfo := models.TicketInfo{
 			TicketUID:    ticket.TicketUID,
@@ -79,15 +48,15 @@ func UserTicketsController(ticketServiceAddress, flightServiceAddress, username 
 }
 
 func UserInfoController(ticketServiceAddress, flightServiceAddress, bonusServiceAddress, username string) (*models.UserInfo, error) {
-	ticketsInfo, err := UserTicketsController(ticketServiceAddress, flightServiceAddress, username)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user tickets: %s", err)
-	}
+	ticketsInfo, _ := UserTicketsController(ticketServiceAddress, flightServiceAddress, username)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to get user tickets: %s", err)
+	// }
 
-	privilege, err := GetPrivilegeShortInfo(bonusServiceAddress, username)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get privilege info: %s", err)
-	}
+	privilege, _ := GetPrivilegeShortInfo(bonusServiceAddress, username)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to get privilege info: %s", err)
+	// }
 
 	userInfo := &models.UserInfo{
 		TicketsInfo: ticketsInfo,
@@ -103,13 +72,13 @@ func UserInfoController(ticketServiceAddress, flightServiceAddress, bonusService
 func UserPrivilegeController(bonusServiceAddress, username string) (*models.PrivilegeInfo, error) {
 	privilegeShortInfo, err := GetPrivilegeShortInfo(bonusServiceAddress, username)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user tickets: %s", err)
+		return &models.PrivilegeInfo{}, nil //fmt.Errorf("failed to get user tickets: %s", err)
 	}
 
-	privilegeHistory, err := GetPrivilegeHistory(bonusServiceAddress, privilegeShortInfo.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get privilege info: %s", err)
-	}
+	privilegeHistory, _ := GetPrivilegeHistory(bonusServiceAddress, privilegeShortInfo.ID)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to get privilege info: %s", err)
+	// }
 
 	privilegeInfo := &models.PrivilegeInfo{
 		Status:  privilegeShortInfo.Status,
@@ -160,13 +129,20 @@ func BuyTicketController(tAddr, fAddr, bAddr, username string, info *models.BuyT
 
 	if !info.PaidFromBalance {
 		if err := CreatePrivilege(bAddr, username, diff); err != nil {
+			deleteTicket(tAddr, username, uid)
 			return nil, fmt.Errorf("failed to get privilege info: %s", err)
 		}
 	}
 
 	err = CreatePrivilegeHistoryRecord(bAddr, uid, flight.Date, optype, 1, diff)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create bonus history record: %s", err)
+		job := job_scheduler.NewExecJob(func() (interface{}, error) {
+			err = CreatePrivilegeHistoryRecord(bAddr, uid, flight.Date, optype, 1, diff)
+			return "", err
+		})
+		jobscheduler.JobQueue <- job
+
+		// return nil, fmt.Errorf("failed to create bonus history record: %s", err)
 	}
 
 	purchaseInfo := models.PurchaseTicketInfo{
@@ -186,4 +162,37 @@ func BuyTicketController(tAddr, fAddr, bAddr, username string, info *models.BuyT
 	}
 
 	return &purchaseInfo, nil
+}
+
+func CancelTicketController(ticketServiceAddress, bonusServiceAddress, username string, ticketUID string) error {
+	privilegeShortInfo, err := GetPrivilegeShortInfo(bonusServiceAddress, username)
+	if err != nil {
+		return nil
+	}
+
+	privilegeHistory, err := GetPrivilegeHistory(bonusServiceAddress, privilegeShortInfo.ID)
+	if err != nil {
+		return nil
+	}
+
+	privilegeInfo := &models.PrivilegeInfo{
+		Status:  privilegeShortInfo.Status,
+		Balance: privilegeShortInfo.Balance,
+		History: privilegeHistory,
+	}
+
+	for _, privilege := range *privilegeInfo.History {
+		fmt.Println(privilege.TicketUID, ticketUID)
+		if privilege.TicketUID == ticketUID {
+			newBalance := privilegeInfo.Balance - privilege.BalanceDiff
+			if newBalance < 0 {
+				newBalance = 0
+			}
+			if err := UpdatePrivilege(bonusServiceAddress, username, newBalance); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }

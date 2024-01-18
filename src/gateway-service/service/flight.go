@@ -129,7 +129,7 @@ func GetAirport(flightServiceAddress string, airportID int) (*models.Airport, er
 
 	_, herr := flightcb.Execute(CheckFlightHealth)
 	if herr != nil {
-		return &models.Airport{}, herr
+		return &models.Airport{City: "Error", Name: "error"}, herr
 	}
 
 	requestURL := fmt.Sprintf("%s/api/v1/flight/airport/%d", flightServiceAddress, airportID)

@@ -10,6 +10,7 @@ import (
 type TicketDB interface {
 	GetTicketsByUsername(username string) ([]*models.Ticket, error)
 	CreateTicket(ticket *models.Ticket) error
+	DeleteTicketByUID(uid string) error
 }
 
 type DBHandler struct {
@@ -64,6 +65,13 @@ func (r *DBHandler) CreateTicket(ticket *models.Ticket) error {
 		ticket.Price,
 		ticket.Status,
 	)
+
+	return err
+}
+
+func (r *DBHandler) DeleteTicketByUID(uid string) error {
+
+	_, err := r.db.Query(`DELETE FROM ticket WHERE ticket_uid=$1`, uid)
 
 	return err
 }

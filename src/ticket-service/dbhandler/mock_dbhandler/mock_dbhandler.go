@@ -48,6 +48,20 @@ func (mr *MockTicketDBMockRecorder) CreateTicket(ticket interface{}) *gomock.Cal
         return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTicket", reflect.TypeOf((*MockTicketDB)(nil).CreateTicket), ticket)
 }
 
+// DeleteTicketByUID mocks base method.
+func (m *MockTicketDB) DeleteTicketByUID(uid string) error {
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "DeleteTicketByUID", uid)
+        ret0, _ := ret[0].(error)
+        return ret0
+}
+
+// DeleteTicketByUID indicates an expected call of DeleteTicketByUID.
+func (mr *MockTicketDBMockRecorder) DeleteTicketByUID(uid interface{}) *gomock.Call {
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTicketByUID", reflect.TypeOf((*MockTicketDB)(nil).DeleteTicketByUID), uid)
+}
+
 // GetTicketsByUsername mocks base method.
 func (m *MockTicketDB) GetTicketsByUsername(username string) ([]*models.Ticket, error) {
         m.ctrl.T.Helper()

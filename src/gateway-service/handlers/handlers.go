@@ -31,7 +31,7 @@ func (gs *GatewayService) GetAllFlights(c *gin.Context) {
 	flights, err := service.GetAllFlightsInfo(gs.Config.FlightServiceAddress)
 	if err != nil {
 		log.Printf("failed to get response from flights service: %v\n", err)
-		c.IndentedJSON(http.StatusInternalServerError, nil)
+		c.IndentedJSON(http.StatusNoContent, flights)
 		return
 	}
 

@@ -38,6 +38,7 @@ func main() {
 
 	router.POST("/api/v1/tickets", ticketHandler.BuyTicketHandler)
 	router.GET("/api/v1/tickets/:username", ticketHandler.GetTicketsByUsernameHandler)
+	router.DELETE("/api/v1/tickets/:uid", ticketHandler.DeleteTicket)
 
 	port := os.Getenv("PORT")
 	if port == "" {

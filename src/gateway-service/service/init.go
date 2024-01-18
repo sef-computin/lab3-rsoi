@@ -1,10 +1,16 @@
 package service
 
-import circuitbreaker "lab2/src/circuit-breaker"
+import (
+	circuitbreaker "lab2/src/circuit-breaker"
+	job_scheduler "lab2/src/job-scheduler"
+	"time"
+)
 
 var ticketcb *circuitbreaker.CircuitBreaker
 var flightcb *circuitbreaker.CircuitBreaker
 var bonuscb *circuitbreaker.CircuitBreaker
+
+var jobscheduler *job_scheduler.JobScheduler
 
 func init() {
 	var ticketst circuitbreaker.Settings
@@ -30,4 +36,7 @@ func init() {
 		return counts.Requests >= 3 && failureRatio >= 0.6
 	}
 	bonuscb = circuitbreaker.NewCircuitBreaker(bonusst)
+
+	jobscheduler = job_scheduler.NewJobScheduler(10 * time.Second)
+	jobscheduler.Start()
 }

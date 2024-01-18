@@ -45,6 +45,15 @@ func (h *TicketHandler) BuyTicketHandler(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, nil)
 }
 
+func (h *TicketHandler) DeleteTicket(c *gin.Context) {
+	uid := c.Param("uid")
+	err := h.DBHandler.DeleteTicketByUID(uid)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, nil)
+	}
+	c.IndentedJSON(http.StatusOK, nil)
+}
+
 func (h *TicketHandler) GetHealth(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
