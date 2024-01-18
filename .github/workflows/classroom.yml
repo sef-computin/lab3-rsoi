@@ -33,7 +33,7 @@ jobs:
           cd src/flight-service/handlers && go test && cd ../../..
           cd src/ticket-service/handlers && go test && cd ../../..
       
-      name: Run API Tests
+      - name: Run API Tests
         timeout-minutes: 5
         run: ./scripts/test-script.sh
         env:
